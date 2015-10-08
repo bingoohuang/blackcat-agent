@@ -6,9 +6,7 @@ import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatMsgReq;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatProcess;
 import com.google.common.base.Joiner;
 import org.gridkit.lab.sigar.SigarFactory;
-import org.hyperic.sigar.ProcMem;
-import org.hyperic.sigar.SigarException;
-import org.hyperic.sigar.SigarProxy;
+import org.hyperic.sigar.*;
 import org.hyperic.sigar.ptql.ProcessFinder;
 
 public class BlackcatProcessCollector
@@ -42,11 +40,13 @@ public class BlackcatProcessCollector
         for (long pid : pids) {
             String[] procArgs = sigar.getProcArgs(pid);
             ProcMem procMem = sigar.getProcMem(pid);
+            ProcCpu procCpu = sigar.getProcCpu(pid);
 
             builder.addProc(BlackcatProcess.Proc.newBuilder()
                     .setPid(pid)
                     .setArgs(joiner.join(procArgs))
                     .setRes(procMem.getResident())
+                    .setStartTime(procCpu.getStartTime())
                     .build());
         }
     }

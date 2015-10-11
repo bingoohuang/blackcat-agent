@@ -23,6 +23,6 @@ public class BlackcatMemoryCollector
 
         return BlackcatMsgReq.newBuilder()
                 .setHead(Utils.buildHead(MsgType.BlackcatMemory))
-                .setMemory(builder).build();
+                .setBlackcatMemory(builder).build();
     }
 }

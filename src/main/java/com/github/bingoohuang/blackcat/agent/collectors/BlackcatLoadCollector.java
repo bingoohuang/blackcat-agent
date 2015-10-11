@@ -20,13 +20,13 @@ public class BlackcatLoadCollector
 
             BlackcatLoad.Builder builder = BlackcatLoad.newBuilder()
                     .setCpuNum(cpuNum)
-                    .setOneMinAvg(loadAverage[0])
-                    .setFiveMinsAvg(loadAverage[1])
-                    .setFifteenMinsAvg(loadAverage[2]);
+                    .setOneMinAvg((float) loadAverage[0])
+                    .setFiveMinsAvg((float) loadAverage[1])
+                    .setFifteenMinsAvg((float) loadAverage[2]);
 
             return BlackcatMsgReq.newBuilder()
                     .setHead(Utils.buildHead(MsgType.BlackcatLoad))
-                    .setLoad(builder).build();
+                    .setBlackcatLoad(builder).build();
 
         } catch (SigarException e) {
             throw new RuntimeException(e);

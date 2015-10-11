@@ -6,7 +6,10 @@ import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatMsgReq;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatProcess;
 import com.google.common.base.Joiner;
 import org.gridkit.lab.sigar.SigarFactory;
-import org.hyperic.sigar.*;
+import org.hyperic.sigar.ProcCpu;
+import org.hyperic.sigar.ProcMem;
+import org.hyperic.sigar.SigarException;
+import org.hyperic.sigar.SigarProxy;
 import org.hyperic.sigar.ptql.ProcessFinder;
 
 public class BlackcatProcessCollector
@@ -24,7 +27,7 @@ public class BlackcatProcessCollector
         }
         return BlackcatMsgReq.newBuilder()
                 .setHead(Utils.buildHead(MsgType.BlackcatProcess))
-                .setProcess(builder).build();
+                .setBlackcatProcess(builder).build();
     }
 
 

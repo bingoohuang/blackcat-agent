@@ -36,6 +36,6 @@ public class BlackcatFileStoresCollector
 
         return BlackcatMsgReq.newBuilder()
                 .setHead(Utils.buildHead(MsgType.BlackcatFileStores))
-                .setStores(builder).build();
+                .setBlackcatFileStores(builder).build();
     }
 }

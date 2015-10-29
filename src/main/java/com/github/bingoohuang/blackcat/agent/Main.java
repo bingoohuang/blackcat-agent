@@ -2,7 +2,7 @@ package com.github.bingoohuang.blackcat.agent;
 
 import com.github.bingoohuang.blackcat.agent.collectors.*;
 import com.github.bingoohuang.blackcat.sdk.netty.BlackcatClient;
-import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatMsgReq;
+import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReq;
 import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.collect.ImmutableList;
 import joptsimple.OptionParser;
@@ -33,11 +33,15 @@ public class Main {
         if (options.has("send")) {
             client = new BlackcatClient();
             client.connect();
+
+            for (BlackcatCollector collector : collectors) {
+                client.register(collector);
+            }
         }
 
         while (true) {
             for (BlackcatCollector collector : collectors) {
-                BlackcatMsgReq req = collector.collect();
+                BlackcatReq req = collector.collect();
                 if (options.has("send")) client.send(req);
                 if (options.has("print")) System.out.println(req);
             }

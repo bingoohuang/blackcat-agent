@@ -2,17 +2,16 @@ package com.github.bingoohuang.blackcat.agent.collectors;
 
 import com.github.bingoohuang.blackcat.agent.utils.Utils;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatLoad;
-import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatMsgHead.MsgType;
-import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatMsgReq;
+import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReq;
+import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReqHead.ReqType;
 import org.gridkit.lab.sigar.SigarFactory;
 import org.hyperic.sigar.SigarException;
 import org.hyperic.sigar.SigarProxy;
 
-public class BlackcatLoadCollector
-        implements BlackcatCollector<BlackcatMsgReq> {
+public class BlackcatLoadCollector implements BlackcatCollector {
 
     @Override
-    public BlackcatMsgReq collect() {
+    public BlackcatReq collect() {
         SigarProxy sigar = SigarFactory.newSigar();
         try {
             double[] loadAverage = sigar.getLoadAverage();
@@ -24,8 +23,8 @@ public class BlackcatLoadCollector
                     .setFiveMinsAvg((float) loadAverage[1])
                     .setFifteenMinsAvg((float) loadAverage[2]);
 
-            return BlackcatMsgReq.newBuilder()
-                    .setHead(Utils.buildHead(MsgType.BlackcatLoad))
+            return BlackcatReq.newBuilder()
+                    .setBlackcatReqHead(Utils.buildHead(ReqType.BlackcatLoad))
                     .setBlackcatLoad(builder).build();
 
         } catch (SigarException e) {

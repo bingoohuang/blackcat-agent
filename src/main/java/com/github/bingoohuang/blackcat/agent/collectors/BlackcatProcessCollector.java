@@ -1,57 +1,72 @@
 package com.github.bingoohuang.blackcat.agent.collectors;
 
 import com.github.bingoohuang.blackcat.agent.utils.Utils;
-import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatMsgHead.MsgType;
-import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatMsgReq;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatProcess;
+import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReq;
+import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReqHead.ReqType;
+import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatWarnConfig;
+import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatWarnConfig.BlackcatWarnProcess;
 import com.google.common.base.Joiner;
+import com.google.common.eventbus.Subscribe;
 import org.gridkit.lab.sigar.SigarFactory;
-import org.hyperic.sigar.ProcCpu;
-import org.hyperic.sigar.ProcMem;
 import org.hyperic.sigar.SigarException;
 import org.hyperic.sigar.SigarProxy;
 import org.hyperic.sigar.ptql.ProcessFinder;
 
-public class BlackcatProcessCollector
-        implements BlackcatCollector<BlackcatMsgReq> {
+import java.util.List;
 
+public class BlackcatProcessCollector implements BlackcatCollector {
     @Override
-    public BlackcatMsgReq collect() {
+    public BlackcatReq collect() {
         BlackcatProcess.Builder builder;
         builder = BlackcatProcess.newBuilder();
 
         try {
-            ps("java", builder);
+            if (warnProcesses != null) {
+                for (BlackcatWarnProcess warnProcess : warnProcesses) {
+                    ps(warnProcess, builder);
+                }
+            }
         } catch (SigarException e) {
             throw new RuntimeException(e);
         }
-        return BlackcatMsgReq.newBuilder()
-                .setHead(Utils.buildHead(MsgType.BlackcatProcess))
+
+        return BlackcatReq.newBuilder()
+                .setBlackcatReqHead(Utils.buildHead(ReqType.BlackcatProcess))
                 .setBlackcatProcess(builder).build();
     }
 
+    SigarProxy sigar = SigarFactory.newSigar();
 
-    private static void ps(
-            String argsContains,
+    private void ps(
+            BlackcatWarnProcess warnProcess,
             BlackcatProcess.Builder builder
     ) throws SigarException {
-        SigarProxy sigar = SigarFactory.newSigar();
-        long[] pids = ProcessFinder.find(sigar,
-                "Args.*.ct=" + argsContains);
+        // Process Table Query Language: https://support.hyperic.com/display/SIGAR/PTQL
+        StringBuilder ptql = new StringBuilder();
+        for (String processKey : warnProcess.getProcessKeysList()) {
+            if (ptql.length() > 0) ptql.append(',');
+            ptql.append("Args.*.ct=").append(processKey);
+        }
 
         Joiner joiner = Joiner.on(' ');
-        for (long pid : pids) {
-            String[] procArgs = sigar.getProcArgs(pid);
-            ProcMem procMem = sigar.getProcMem(pid);
-            ProcCpu procCpu = sigar.getProcCpu(pid);
-
+        for (long pid : ProcessFinder.find(sigar, ptql.toString())) {
             builder.addProc(BlackcatProcess.Proc.newBuilder()
                     .setPid(pid)
-                    .setArgs(joiner.join(procArgs))
-                    .setRes(procMem.getResident())
-                    .setStartTime(procCpu.getStartTime())
+                    .setArgs(joiner.join(sigar.getProcArgs(pid)))
+                    .setRes(sigar.getProcMem(pid).getResident())
+                    .setStartTime(sigar.getProcCpu(pid).getStartTime())
+                    .setName(warnProcess.getProcessName())
                     .build());
         }
+    }
+
+
+    volatile List<BlackcatWarnProcess> warnProcesses;
+
+    @Subscribe
+    public void configRegister(BlackcatWarnConfig blackcatWarnConfig) {
+        warnProcesses = blackcatWarnConfig.getBlackcatWarnProcessList();
     }
 
 }

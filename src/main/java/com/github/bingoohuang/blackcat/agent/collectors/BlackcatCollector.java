@@ -1,7 +1,7 @@
 package com.github.bingoohuang.blackcat.agent.collectors;
 
-import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg;
+import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReq;
 
-public interface BlackcatCollector<BlackcatMsgReq> {
-    BlackcatMsg.BlackcatMsgReq collect();
+public interface BlackcatCollector {
+    BlackcatReq collect();
 }

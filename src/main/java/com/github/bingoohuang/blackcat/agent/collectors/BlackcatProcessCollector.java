@@ -7,6 +7,7 @@ import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReqHead.
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatWarnConfig;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatWarnConfig.BlackcatWarnProcess;
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.eventbus.Subscribe;
 import org.gridkit.lab.sigar.SigarFactory;
 import org.hyperic.sigar.SigarException;
@@ -17,7 +18,7 @@ import java.util.List;
 
 public class BlackcatProcessCollector implements BlackcatCollector {
     @Override
-    public BlackcatReq collect() {
+    public Optional<BlackcatReq> collect() {
         BlackcatProcess.Builder builder;
         builder = BlackcatProcess.newBuilder();
 
@@ -31,9 +32,13 @@ public class BlackcatProcessCollector implements BlackcatCollector {
             throw new RuntimeException(e);
         }
 
-        return BlackcatReq.newBuilder()
+        if (builder.getProcList().isEmpty()) return Optional.absent();
+
+        BlackcatReq blackcatReq = BlackcatReq.newBuilder()
                 .setBlackcatReqHead(Utils.buildHead(ReqType.BlackcatProcess))
                 .setBlackcatProcess(builder).build();
+
+        return Optional.of(blackcatReq);
     }
 
     SigarProxy sigar = SigarFactory.newSigar();

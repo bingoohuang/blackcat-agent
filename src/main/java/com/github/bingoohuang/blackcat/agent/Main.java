@@ -4,6 +4,7 @@ import com.github.bingoohuang.blackcat.agent.collectors.*;
 import com.github.bingoohuang.blackcat.sdk.netty.BlackcatClient;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReq;
 import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -41,9 +42,11 @@ public class Main {
 
         while (true) {
             for (BlackcatCollector collector : collectors) {
-                BlackcatReq req = collector.collect();
-                if (options.has("send")) client.send(req);
-                if (options.has("print")) System.out.println(req);
+                Optional<BlackcatReq> req = collector.collect();
+                if (!req.isPresent()) continue;
+
+                if (options.has("send")) client.send(req.get());
+                if (options.has("print")) System.out.println(req.get());
             }
 
             Blackcats.sleep(1, TimeUnit.MINUTES);

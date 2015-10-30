@@ -4,6 +4,7 @@ import com.github.bingoohuang.blackcat.agent.utils.Utils;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatFileStores;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReq;
+import com.google.common.base.Optional;
 import oshi.SystemInfo;
 import oshi.hardware.HardwareAbstractionLayer;
 import oshi.software.os.OSFileStore;
@@ -14,7 +15,7 @@ public class BlackcatFileStoresCollector
         implements BlackcatCollector {
 
     @Override
-    public BlackcatReq collect() {
+    public Optional<BlackcatReq> collect() {
         SystemInfo systemInfo = new SystemInfo();
         HardwareAbstractionLayer hardware = systemInfo.getHardware();
 
@@ -34,8 +35,10 @@ public class BlackcatFileStoresCollector
         }
 
 
-        return BlackcatReq.newBuilder()
+        BlackcatReq blackcatReq = BlackcatReq.newBuilder()
                 .setBlackcatReqHead(Utils.buildHead(ReqType.BlackcatFileStores))
                 .setBlackcatFileStores(builder).build();
+
+        return Optional.of(blackcatReq);
     }
 }

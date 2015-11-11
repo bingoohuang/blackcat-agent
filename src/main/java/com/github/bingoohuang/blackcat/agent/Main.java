@@ -1,7 +1,7 @@
 package com.github.bingoohuang.blackcat.agent;
 
 import com.github.bingoohuang.blackcat.agent.collectors.*;
-import com.github.bingoohuang.blackcat.sdk.netty.BlackcatClient;
+import com.github.bingoohuang.blackcat.sdk.netty.BlackcatNettyClient;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReq;
 import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.base.Optional;
@@ -29,10 +29,10 @@ public class Main {
                 new BlackcatProcessCollector()
         );
 
-        BlackcatClient client = null;
+        BlackcatNettyClient client = null;
 
         if (options.has("send")) {
-            client = new BlackcatClient();
+            client = new BlackcatNettyClient();
             client.connect();
 
             for (BlackcatCollector collector : collectors) {

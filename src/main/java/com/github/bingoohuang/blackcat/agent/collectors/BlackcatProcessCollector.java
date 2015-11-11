@@ -1,11 +1,11 @@
 package com.github.bingoohuang.blackcat.agent.collectors;
 
-import com.github.bingoohuang.blackcat.agent.utils.Utils;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatProcess;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReq;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReqHead.ReqType;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatWarnConfig;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatWarnConfig.BlackcatWarnProcess;
+import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.eventbus.Subscribe;
@@ -35,7 +35,7 @@ public class BlackcatProcessCollector implements BlackcatCollector {
         if (builder.getProcList().isEmpty()) return Optional.absent();
 
         BlackcatReq blackcatReq = BlackcatReq.newBuilder()
-                .setBlackcatReqHead(Utils.buildHead(ReqType.BlackcatProcess))
+                .setBlackcatReqHead(Blackcats.buildHead(ReqType.BlackcatProcess))
                 .setBlackcatProcess(builder).build();
 
         return Optional.of(blackcatReq);

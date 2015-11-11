@@ -1,9 +1,9 @@
 package com.github.bingoohuang.blackcat.agent.collectors;
 
-import com.github.bingoohuang.blackcat.agent.utils.Utils;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatMemory;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReq;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReqHead.ReqType;
+import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.base.Optional;
 import oshi.SystemInfo;
 import oshi.hardware.HardwareAbstractionLayer;
@@ -22,7 +22,7 @@ public class BlackcatMemoryCollector implements BlackcatCollector {
                 .setAvailable(memory.getAvailable());
 
         BlackcatReq blackcatReq = BlackcatReq.newBuilder()
-                .setBlackcatReqHead(Utils.buildHead(ReqType.BlackcatMemory))
+                .setBlackcatReqHead(Blackcats.buildHead(ReqType.BlackcatMemory))
                 .setBlackcatMemory(builder).build();
         return Optional.of(blackcatReq);
     }

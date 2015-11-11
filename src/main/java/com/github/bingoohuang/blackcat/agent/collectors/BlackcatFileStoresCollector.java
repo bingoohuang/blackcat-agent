@@ -1,9 +1,9 @@
 package com.github.bingoohuang.blackcat.agent.collectors;
 
-import com.github.bingoohuang.blackcat.agent.utils.Utils;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatFileStores;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReq;
+import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.base.Optional;
 import oshi.SystemInfo;
 import oshi.hardware.HardwareAbstractionLayer;
@@ -36,7 +36,7 @@ public class BlackcatFileStoresCollector
 
 
         BlackcatReq blackcatReq = BlackcatReq.newBuilder()
-                .setBlackcatReqHead(Utils.buildHead(ReqType.BlackcatFileStores))
+                .setBlackcatReqHead(Blackcats.buildHead(ReqType.BlackcatFileStores))
                 .setBlackcatFileStores(builder).build();
 
         return Optional.of(blackcatReq);

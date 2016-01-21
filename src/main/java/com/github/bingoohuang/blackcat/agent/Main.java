@@ -22,11 +22,14 @@ public class Main {
         OptionSet options = parser.parse(args);
 
         List<BlackcatCollector> collectors
-                = ImmutableList.<BlackcatCollector>of(
+                = ImmutableList.of(
                 new BlackcatMemoryCollector(),
                 new BlackcatLoadCollector(),
                 new BlackcatFileStoresCollector(),
-                new BlackcatProcessCollector()
+                new BlackcatProcessCollector(),
+                new BlackcatFileSystemUsageCollector(),
+                new BlackcatNetstatCollector(),
+                new BlackcatRedisInfoCollector()
         );
 
         BlackcatNettyClient client = null;

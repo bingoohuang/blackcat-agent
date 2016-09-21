@@ -14,6 +14,7 @@ import org.hyperic.sigar.SigarException;
 import org.hyperic.sigar.SigarProxy;
 import org.hyperic.sigar.ptql.ProcessFinder;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class BlackcatProcessCollector implements BlackcatCollector {
@@ -24,8 +25,10 @@ public class BlackcatProcessCollector implements BlackcatCollector {
 
         try {
             if (warnProcesses != null) {
+                List<Long> pids = new ArrayList<Long>();
                 for (BlackcatWarnProcess warnProcess : warnProcesses) {
-                    ps(warnProcess, builder);
+                    ps(pids, warnProcess, builder, "Args.*.ct=");
+                    ps(pids, warnProcess, builder, "Exe.Name.ct=");
                 }
             }
         } catch (SigarException e) {
@@ -44,18 +47,22 @@ public class BlackcatProcessCollector implements BlackcatCollector {
     SigarProxy sigar = SigarFactory.newSigar();
 
     private void ps(
+            List<Long> pids,
             BlackcatWarnProcess warnProcess,
-            BlackcatProcess.Builder builder
+            BlackcatProcess.Builder builder, String queryCondition
     ) throws SigarException {
         // Process Table Query Language: https://support.hyperic.com/display/SIGAR/PTQL
         StringBuilder ptql = new StringBuilder();
         for (String processKey : warnProcess.getProcessKeysList()) {
             if (ptql.length() > 0) ptql.append(',');
-            ptql.append("Args.*.ct=").append(processKey);
+            ptql.append(queryCondition).append(processKey);
         }
 
         Joiner joiner = Joiner.on(' ');
+
         for (long pid : ProcessFinder.find(sigar, ptql.toString())) {
+            if (pids.contains(pid)) continue;
+
             builder.addProc(BlackcatProcess.Proc.newBuilder()
                     .setPid(pid)
                     .setArgs(joiner.join(sigar.getProcArgs(pid)))

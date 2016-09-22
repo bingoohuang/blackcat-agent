@@ -27,8 +27,11 @@ public class BlackcatProcessCollector implements BlackcatCollector {
             if (warnProcesses != null) {
                 List<Long> pids = new ArrayList<Long>();
                 for (BlackcatWarnProcess warnProcess : warnProcesses) {
-                    ps(pids, warnProcess, builder, "Args.*.ct=");
-                    ps(pids, warnProcess, builder, "Exe.Name.ct=");
+                    // ct - Contains value (substring)
+                    ps(pids, warnProcess, builder, "Args.*.ct="); // Command line argument passed to the process
+                    ps(pids, warnProcess, builder, "State.Name.ct="); // Base name of the process executable
+                    // Exe.Name - Full path name of the process executable THIS DO NOT WORK!quit
+                    
                 }
             }
         } catch (SigarException e) {

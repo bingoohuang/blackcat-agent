@@ -1,12 +1,11 @@
 package com.github.bingoohuang.blackcat.agent.collectors;
 
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg;
-import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatFileStores;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReq;
 import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.base.Optional;
+import lombok.val;
 import oshi.SystemInfo;
-import oshi.hardware.HardwareAbstractionLayer;
 import oshi.software.os.OSFileStore;
 
 import static com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReqHead.ReqType;
@@ -16,15 +15,13 @@ public class BlackcatFileStoresCollector
 
     @Override
     public Optional<BlackcatReq> collect() {
-        SystemInfo systemInfo = new SystemInfo();
-        HardwareAbstractionLayer hardware = systemInfo.getHardware();
+        val systemInfo = new SystemInfo();
+        val hardware = systemInfo.getHardware();
 
-        BlackcatFileStores.Builder builder;
-        builder = BlackcatMsg.BlackcatFileStores.newBuilder();
+        val builder = BlackcatMsg.BlackcatFileStores.newBuilder();
 
-        BlackcatFileStores.FileStore fileStore;
         for (OSFileStore osFileStore : hardware.getFileStores()) {
-            fileStore = BlackcatMsg.BlackcatFileStores.FileStore.newBuilder()
+            val fileStore = BlackcatMsg.BlackcatFileStores.FileStore.newBuilder()
                     .setName(osFileStore.getName())
                     .setDescription(osFileStore.getDescription())
                     .setTotal(osFileStore.getTotalSpace())
@@ -35,7 +32,7 @@ public class BlackcatFileStoresCollector
         }
 
 
-        BlackcatReq blackcatReq = BlackcatReq.newBuilder()
+        val blackcatReq = BlackcatReq.newBuilder()
                 .setBlackcatReqHead(Blackcats.buildHead(ReqType.BlackcatFileStores))
                 .setBlackcatFileStores(builder).build();
 

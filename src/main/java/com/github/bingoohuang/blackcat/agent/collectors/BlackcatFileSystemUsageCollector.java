@@ -7,15 +7,15 @@ import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReq;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReqHead.ReqType;
 import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.base.Optional;
+import lombok.SneakyThrows;
+import lombok.val;
 import org.gridkit.lab.sigar.SigarFactory;
 import org.hyperic.sigar.FileSystem;
-import org.hyperic.sigar.FileSystemUsage;
 import org.hyperic.sigar.SigarException;
-import org.hyperic.sigar.SigarProxy;
 
 public class BlackcatFileSystemUsageCollector implements BlackcatCollector {
-    @Override
-    public Optional<BlackcatReq> collect() throws SigarException {
+    @Override @SneakyThrows
+    public Optional<BlackcatReq> collect() {
         /*
         tps：该设备每秒的传输次数（Indicate the number of transfers per second
         that were issued to the device.）。“一次传输”意思是“一次I/O请求”。
@@ -29,21 +29,19 @@ public class BlackcatFileSystemUsageCollector implements BlackcatCollector {
         Filesystem      Mounted on           Reads     Writes R-bytes W-bytes Queue Svctm
         /dev/disk1      /                        0          0      0       0      -     -
          */
-        SigarProxy sigar = SigarFactory.newSigar();
+        val sigar = SigarFactory.newSigar();
 
-        BlackcatMsg.BlackcatFileSystemUsage.Builder builder;
-        builder = BlackcatMsg.BlackcatFileSystemUsage.newBuilder();
+        val builder = BlackcatMsg.BlackcatFileSystemUsage.newBuilder();
 
-        FileSystem[] fileSystems = sigar.getFileSystemList();
-        for (FileSystem fileSystem : fileSystems) {
+        val fileSystems = sigar.getFileSystemList();
+        for (val fileSystem : fileSystems) {
             if (fileSystem.getType() != FileSystem.TYPE_LOCAL_DISK) continue;
 
             String dirName = fileSystem.getDirName();
-            FileSystemUsage fsUsage = sigar.getFileSystemUsage(dirName);
+            val fsUsage = sigar.getFileSystemUsage(dirName);
             // https://searchcode.com/codesearch/view/8192367/
 
-            Usage.Builder usageBuilder;
-            usageBuilder = Usage.newBuilder();
+            val usageBuilder = Usage.newBuilder();
             usageBuilder.setDevName(fileSystem.getDevName())
                     .setDirName(fileSystem.getDirName())
                     .setDiskReads(fsUsage.getDiskReads())
@@ -63,7 +61,7 @@ public class BlackcatFileSystemUsageCollector implements BlackcatCollector {
             builder.addUsage(usageBuilder);
         }
 
-        BlackcatReq blackcatReq = BlackcatReq.newBuilder()
+        val blackcatReq = BlackcatReq.newBuilder()
                 .setBlackcatReqHead(Blackcats.buildHead(ReqType.BlackcatFileSystemUsage))
                 .setBlackcatFileSystemUsage(builder).build();
         return Optional.of(blackcatReq);

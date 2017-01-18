@@ -7,7 +7,7 @@ import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReqHead.
 import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.base.Optional;
 import com.google.common.collect.Maps;
-import org.hyperic.sigar.SigarException;
+import lombok.val;
 
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -16,15 +16,15 @@ import java.util.regex.Pattern;
 
 public class BlackcatRedisInfoCollector implements BlackcatCollector {
     @Override
-    public Optional<BlackcatReq> collect() throws SigarException {
+    public Optional<BlackcatReq> collect() {
         Optional<String> info = redisInfo();
         if (!info.isPresent()) return Optional.absent();
 
-        BlackcatJSON.Builder builder = BlackcatJSON.newBuilder()
+        val builder = BlackcatJSON.newBuilder()
                 .setJson(info.get())
                 .setSchema("RedisInfo");
 
-        BlackcatReq blackcatReq = BlackcatReq.newBuilder()
+        val blackcatReq = BlackcatReq.newBuilder()
                 .setBlackcatReqHead(Blackcats.buildHead(ReqType.BlackcatJSON))
                 .setBlackcatJSON(builder).build();
         return Optional.of(blackcatReq);

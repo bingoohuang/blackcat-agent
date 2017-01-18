@@ -9,8 +9,9 @@ import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.eventbus.Subscribe;
+import lombok.SneakyThrows;
+import lombok.val;
 import org.gridkit.lab.sigar.SigarFactory;
-import org.hyperic.sigar.SigarException;
 import org.hyperic.sigar.SigarProxy;
 import org.hyperic.sigar.ptql.ProcessFinder;
 
@@ -18,29 +19,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BlackcatProcessCollector implements BlackcatCollector {
-    @Override
+    @Override @SneakyThrows
     public Optional<BlackcatReq> collect() {
-        BlackcatProcess.Builder builder;
-        builder = BlackcatProcess.newBuilder();
+        val builder = BlackcatProcess.newBuilder();
 
-        try {
-            if (warnProcesses != null) {
-                List<Long> pids = new ArrayList<Long>();
-                for (BlackcatWarnProcess warnProcess : warnProcesses) {
-                    // ct - Contains value (substring)
-                    ps(pids, warnProcess, builder, "Args.*.ct="); // Command line argument passed to the process
-                    ps(pids, warnProcess, builder, "State.Name.ct="); // Base name of the process executable
-                    // Exe.Name - Full path name of the process executable THIS DO NOT WORK!quit
-                    
-                }
+        if (warnProcesses != null) {
+            List<Long> pids = new ArrayList<Long>();
+            for (val warnProcess : warnProcesses) {
+                // ct - Contains value (substring)
+                ps(pids, warnProcess, builder, "Args.*.ct="); // Command line argument passed to the process
+                ps(pids, warnProcess, builder, "State.Name.ct="); // Base name of the process executable
+                // Exe.Name - Full path name of the process executable THIS DO NOT WORK!quit
+
             }
-        } catch (SigarException e) {
-            throw new RuntimeException(e);
         }
-
         if (builder.getProcList().isEmpty()) return Optional.absent();
 
-        BlackcatReq blackcatReq = BlackcatReq.newBuilder()
+        val blackcatReq = BlackcatReq.newBuilder()
                 .setBlackcatReqHead(Blackcats.buildHead(ReqType.BlackcatProcess))
                 .setBlackcatProcess(builder).build();
 
@@ -49,13 +44,14 @@ public class BlackcatProcessCollector implements BlackcatCollector {
 
     SigarProxy sigar = SigarFactory.newSigar();
 
+    @SneakyThrows
     private void ps(
             List<Long> pids,
             BlackcatWarnProcess warnProcess,
             BlackcatProcess.Builder builder, String queryCondition
-    ) throws SigarException {
+    ) {
         // Process Table Query Language: https://support.hyperic.com/display/SIGAR/PTQL
-        StringBuilder ptql = new StringBuilder();
+        val ptql = new StringBuilder();
         for (String processKey : warnProcess.getProcessKeysList()) {
             if (ptql.length() > 0) ptql.append(',');
             ptql.append(queryCondition).append(processKey);

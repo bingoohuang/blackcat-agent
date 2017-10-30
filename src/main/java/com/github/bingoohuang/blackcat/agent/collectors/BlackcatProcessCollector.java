@@ -24,7 +24,7 @@ public class BlackcatProcessCollector implements BlackcatCollector {
         val builder = BlackcatProcess.newBuilder();
 
         if (warnProcesses != null) {
-            List<Long> pids = new ArrayList<Long>();
+            val pids = new ArrayList<Long>();
             for (val warnProcess : warnProcesses) {
                 // ct - Contains value (substring)
                 ps(pids, warnProcess, builder, "Args.*.ct="); // Command line argument passed to the process
@@ -43,21 +43,19 @@ public class BlackcatProcessCollector implements BlackcatCollector {
     SigarProxy sigar = SigarFactory.newSigar();
 
     @SneakyThrows
-    private void ps(
-            List<Long> pids,
-            BlackcatWarnProcess warnProcess,
-            BlackcatProcess.Builder builder, String queryCondition
+    private void ps(List<Long> pids, BlackcatWarnProcess warnProcess,
+                    BlackcatProcess.Builder builder, String queryCondition
     ) {
         // Process Table Query Language: https://support.hyperic.com/display/SIGAR/PTQL
         val ptql = new StringBuilder();
-        for (String processKey : warnProcess.getProcessKeysList()) {
+        for (val processKey : warnProcess.getProcessKeysList()) {
             if (ptql.length() > 0) ptql.append(',');
             ptql.append(queryCondition).append(processKey);
         }
 
-        Joiner joiner = Joiner.on(' ');
+        val joiner = Joiner.on(' ');
 
-        for (long pid : ProcessFinder.find(sigar, ptql.toString())) {
+        for (val pid : ProcessFinder.find(sigar, ptql.toString())) {
             if (pids.contains(pid)) continue;
 
             builder.addProc(BlackcatProcess.Proc.newBuilder()
@@ -70,12 +68,10 @@ public class BlackcatProcessCollector implements BlackcatCollector {
         }
     }
 
-
     volatile List<BlackcatWarnProcess> warnProcesses;
 
     @Subscribe
     public void configRegister(BlackcatWarnConfig blackcatWarnConfig) {
         warnProcesses = blackcatWarnConfig.getBlackcatWarnProcessList();
     }
-
 }

@@ -30,10 +30,8 @@ public class BlackcatProcessCollector implements BlackcatCollector {
                 ps(pids, warnProcess, builder, "Args.*.ct="); // Command line argument passed to the process
                 ps(pids, warnProcess, builder, "State.Name.ct="); // Base name of the process executable
                 // Exe.Name - Full path name of the process executable THIS DO NOT WORK!quit
-
             }
         }
-        if (builder.getProcList().isEmpty()) return Optional.absent();
 
         val blackcatReq = BlackcatReq.newBuilder()
                 .setBlackcatReqHead(Blackcats.buildHead(ReqType.BlackcatProcess))

@@ -2,27 +2,23 @@ package com.github.bingoohuang.blackcat.agent;
 
 import com.github.bingoohuang.blackcat.agent.collectors.*;
 import com.github.bingoohuang.blackcat.sdk.netty.BlackcatNettyClient;
-import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReq;
 import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import joptsimple.OptionParser;
-import joptsimple.OptionSet;
+import lombok.val;
 import org.hyperic.sigar.SigarException;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
     public static void main(String[] args) throws SigarException {
-        OptionParser parser = new OptionParser();
+        val parser = new OptionParser();
         parser.accepts("print");
         parser.accepts("send");
 
-        OptionSet options = parser.parse(args);
+        val options = parser.parse(args);
 
-        List<BlackcatCollector> collectors
-                = ImmutableList.of(
+        val collectors = ImmutableList.of(
                 new BlackcatMemoryCollector(),
                 new BlackcatLoadCollector(),
                 new BlackcatFileStoresCollector(),
@@ -38,17 +34,17 @@ public class Main {
             client = new BlackcatNettyClient();
             client.connect();
 
-            for (BlackcatCollector collector : collectors) {
+            for (val collector : collectors) {
                 client.register(collector);
             }
         }
 
         while (true) {
-            for (BlackcatCollector collector : collectors) {
-                Optional<BlackcatReq> req = collector.collect();
+            for (val collector : collectors) {
+                val req = collector.collect();
                 if (!req.isPresent()) continue;
 
-                if (options.has("send")) client.send(req.get());
+                if (client != null) client.send(req.get());
                 if (options.has("print")) System.out.println(req.get());
             }
 

@@ -7,12 +7,12 @@ import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.base.Optional;
 import lombok.SneakyThrows;
 import lombok.val;
-import org.gridkit.lab.sigar.SigarFactory;
 
 public class BlackcatNetstatCollector implements BlackcatCollector {
     @Override @SneakyThrows
     public Optional<BlackcatReq> collect() {
-        val sigar = SigarFactory.newSigar();
+        val sigar = SigarSingleton.SIGAR;
+
         val netStat = sigar.getNetStat();
         val builder = BlackcatNetStat.newBuilder();
         builder.setAllInboundTotal(netStat.getAllInboundTotal())

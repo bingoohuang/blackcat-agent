@@ -1,6 +1,9 @@
 package com.github.bingoohuang.blackcat.agent;
 
-import com.github.bingoohuang.blackcat.agent.collectors.*;
+import com.github.bingoohuang.blackcat.agent.collectors.BlackcatFileStoresCollector;
+import com.github.bingoohuang.blackcat.agent.collectors.BlackcatLoadCollector;
+import com.github.bingoohuang.blackcat.agent.collectors.BlackcatMemoryCollector;
+import com.github.bingoohuang.blackcat.agent.collectors.BlackcatProcessCollector;
 import com.github.bingoohuang.blackcat.sdk.netty.BlackcatNettyClient;
 import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.collect.ImmutableList;
@@ -22,10 +25,10 @@ public class Main {
                 new BlackcatMemoryCollector(),
                 new BlackcatLoadCollector(),
                 new BlackcatFileStoresCollector(),
-                new BlackcatProcessCollector(),
-                new BlackcatFileSystemUsageCollector(),
-                new BlackcatNetstatCollector(),
-                new BlackcatRedisInfoCollector()
+                new BlackcatProcessCollector()
+//                new BlackcatFileSystemUsageCollector()
+//                new BlackcatNetstatCollector(),
+//                new BlackcatRedisInfoCollector()
         );
 
         BlackcatNettyClient client = null;

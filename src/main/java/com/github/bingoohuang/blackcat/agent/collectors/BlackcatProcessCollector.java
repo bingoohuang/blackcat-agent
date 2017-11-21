@@ -11,8 +11,6 @@ import com.google.common.base.Optional;
 import com.google.common.eventbus.Subscribe;
 import lombok.SneakyThrows;
 import lombok.val;
-import org.gridkit.lab.sigar.SigarFactory;
-import org.hyperic.sigar.SigarProxy;
 import org.hyperic.sigar.ptql.ProcessFinder;
 
 import java.util.ArrayList;
@@ -40,8 +38,6 @@ public class BlackcatProcessCollector implements BlackcatCollector {
         return Optional.of(blackcatReq);
     }
 
-    SigarProxy sigar = SigarFactory.newSigar();
-
     @SneakyThrows
     private void ps(List<Long> pids, BlackcatWarnProcess warnProcess,
                     BlackcatProcess.Builder builder, String queryCondition
@@ -54,6 +50,8 @@ public class BlackcatProcessCollector implements BlackcatCollector {
         }
 
         val joiner = Joiner.on(' ');
+
+        val sigar = SigarSingleton.SIGAR;
 
         for (val pid : ProcessFinder.find(sigar, ptql.toString())) {
             if (pids.contains(pid)) continue;

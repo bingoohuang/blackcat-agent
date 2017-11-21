@@ -10,10 +10,8 @@ import lombok.SneakyThrows;
 import lombok.val;
 import org.gridkit.lab.sigar.SigarFactory;
 import org.hyperic.sigar.ProcUtil;
-import org.hyperic.sigar.SigarException;
 
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 public class BlackcatLoadCollector implements BlackcatCollector {
@@ -21,24 +19,27 @@ public class BlackcatLoadCollector implements BlackcatCollector {
     @Override @SneakyThrows
     public Optional<BlackcatReq> collect() {
         val sigar = SigarFactory.newSigar();
-        double[] loadAverage = sigar.getLoadAverage();
-        int cpuNum = sigar.getCpuList().length;
+        val loadAverage = sigar.getLoadAverage();
+        val cpuNum = sigar.getCpuList().length;
 
         val builder = BlackcatLoad.newBuilder()
                 .setCpuNum(cpuNum)
                 .setOneMinAvg((float) loadAverage[0])
                 .setFiveMinsAvg((float) loadAverage[1])
-                .setFifteenMinsAvg((float) loadAverage[2]);
+                .setFifteenMinsAvg((float) loadAverage[2])
+                .addAllTopProcess(topN());
 
         val blackcatReq = BlackcatReq.newBuilder()
                 .setBlackcatReqHead(Blackcats.buildHead(ReqType.BlackcatLoad))
-                .setBlackcatLoad(builder).build();
+                .setBlackcatLoad(builder)
+                .build();
+
         return Optional.of(blackcatReq);
     }
 
     @SneakyThrows
     public static List<BlackcatLoad.TopProcess> topN() {
-        val sigar = SigarFactory.newSigar();
+        val sigar = SigarSingleton.SIGAR;
 
         val result = Lists.<BlackcatLoad.TopProcess>newArrayList();
         for (int watchDog = 0; result.isEmpty() && watchDog < 10; ++watchDog) {
@@ -53,17 +54,14 @@ public class BlackcatLoadCollector implements BlackcatCollector {
                                 .setCpuPercent(procCpu.getPercent())
                                 .build());
                     }
-                } catch (SigarException e) {
+                } catch (Exception e) {
                     //for denied access on some pid
                 }
             }
         }
 
-        Collections.sort(result, new Comparator<BlackcatLoad.TopProcess>() { // sort in desc order
-            @Override public int compare(BlackcatLoad.TopProcess o1, BlackcatLoad.TopProcess o2) {
-                return Double.compare(o2.getCpuPercent(), o1.getCpuPercent());
-            }
-        });
+        // sort in desc order
+        Collections.sort(result, (o1, o2) -> Double.compare(o2.getCpuPercent(), o1.getCpuPercent()));
 
         return result;
     }

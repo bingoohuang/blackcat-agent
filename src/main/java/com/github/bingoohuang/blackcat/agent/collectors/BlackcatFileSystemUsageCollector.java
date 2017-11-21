@@ -9,7 +9,6 @@ import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.base.Optional;
 import lombok.SneakyThrows;
 import lombok.val;
-import org.gridkit.lab.sigar.SigarFactory;
 import org.hyperic.sigar.FileSystem;
 import org.hyperic.sigar.SigarException;
 
@@ -29,7 +28,7 @@ public class BlackcatFileSystemUsageCollector implements BlackcatCollector {
         Filesystem      Mounted on           Reads     Writes R-bytes W-bytes Queue Svctm
         /dev/disk1      /                        0          0      0       0      -     -
          */
-        val sigar = SigarFactory.newSigar();
+        val sigar = SigarSingleton.SIGAR;
 
         val builder = BlackcatMsg.BlackcatFileSystemUsage.newBuilder();
 
@@ -37,7 +36,7 @@ public class BlackcatFileSystemUsageCollector implements BlackcatCollector {
         for (val fileSystem : fileSystems) {
             if (fileSystem.getType() != FileSystem.TYPE_LOCAL_DISK) continue;
 
-            String dirName = fileSystem.getDirName();
+            val dirName = fileSystem.getDirName();
             val fsUsage = sigar.getFileSystemUsage(dirName);
             // https://searchcode.com/codesearch/view/8192367/
 

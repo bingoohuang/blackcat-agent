@@ -9,8 +9,6 @@ import com.google.common.base.Optional;
 import com.google.common.collect.Maps;
 import lombok.val;
 
-import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
@@ -47,17 +45,21 @@ public class BlackcatRedisInfoCollector implements BlackcatCollector {
     ...
      */
     private Optional<String> redisInfo() {
-        String script = "echo -e 'info\r\nquit\r\n' " +
-                "| curl -s telnet://localhost:6379";
-        String result = Blackcats.runShellScript(script);
+        val script = "echo -e 'info\r\nquit\r\n' | curl -s telnet://localhost:6379";
+        val result = Blackcats.runShellScript(script);
 
-        Map<String, String> infoResult = Maps.newHashMap();
-        Matcher m = keyValuePattern.matcher(result);
-        while (m.find()) infoResult.put(m.group(1), m.group(2));
+        val infoResult = Maps.<String, String>newHashMap();
+        val matcher = keyValuePattern.matcher(result);
+        while (matcher.find()) infoResult.put(matcher.group(1), matcher.group(2));
 
         if (infoResult.isEmpty()) return Optional.absent();
 
         return Optional.of(JSON.toJSONString(infoResult));
     }
 
+
+    public static void main(String[] args) {
+        val redisInfo = new BlackcatRedisInfoCollector().redisInfo();
+        System.out.println(redisInfo.orNull());
+    }
 }

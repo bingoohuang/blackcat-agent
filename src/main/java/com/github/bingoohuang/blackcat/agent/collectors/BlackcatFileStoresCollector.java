@@ -6,7 +6,6 @@ import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.base.Optional;
 import lombok.val;
 import oshi.SystemInfo;
-import oshi.software.os.OSFileStore;
 
 import static com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReqHead.ReqType;
 
@@ -20,7 +19,7 @@ public class BlackcatFileStoresCollector
 
         val builder = BlackcatMsg.BlackcatFileStores.newBuilder();
 
-        for (OSFileStore osFileStore : hardware.getFileStores()) {
+        for (val osFileStore : hardware.getFileStores()) {
             val fileStore = BlackcatMsg.BlackcatFileStores.FileStore.newBuilder()
                     .setName(osFileStore.getName())
                     .setDescription(osFileStore.getDescription())

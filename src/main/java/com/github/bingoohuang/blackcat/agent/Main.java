@@ -1,14 +1,12 @@
 package com.github.bingoohuang.blackcat.agent;
 
-import com.github.bingoohuang.blackcat.agent.collectors.BlackcatFileStoresCollector;
-import com.github.bingoohuang.blackcat.agent.collectors.BlackcatLoadCollector;
-import com.github.bingoohuang.blackcat.agent.collectors.BlackcatMemoryCollector;
-import com.github.bingoohuang.blackcat.agent.collectors.BlackcatProcessCollector;
+import com.github.bingoohuang.blackcat.agent.collectors.*;
 import com.github.bingoohuang.blackcat.sdk.netty.BlackcatNettyClient;
 import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.collect.ImmutableList;
 import joptsimple.OptionParser;
 import lombok.val;
+import org.apache.commons.lang3.StringUtils;
 import org.hyperic.sigar.SigarException;
 
 import java.util.concurrent.TimeUnit;
@@ -18,6 +16,7 @@ public class Main {
         val parser = new OptionParser();
         parser.accepts("print");
         parser.accepts("send");
+        val logs = parser.accepts("logs").withOptionalArg().ofType(String.class);
 
         val options = parser.parse(args);
 
@@ -39,6 +38,12 @@ public class Main {
 
             for (val collector : collectors) {
                 client.register(collector);
+            }
+
+            String logsConfig = logs.value(options);
+            if (StringUtils.isNotBlank(logsConfig)) {
+                val logExceptionCollector = new BlactcatLogExceptionCollector(client, logsConfig, 30);
+                logExceptionCollector.start();
             }
         }
 

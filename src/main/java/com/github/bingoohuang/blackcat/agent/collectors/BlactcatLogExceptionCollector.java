@@ -26,7 +26,7 @@ import static com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatR
 
 @AllArgsConstructor
 public class BlactcatLogExceptionCollector {
-    private final BlackcatReqSender client;
+    private final BlackcatReqSender sender;
     private final String logFiles;
     private final long rotateSeconds;
 
@@ -50,7 +50,7 @@ public class BlactcatLogExceptionCollector {
             val loggerAndFile = logFile.split(":");
             val commands = new String[]{"/bin/bash", "-c", "tail -F " + loggerAndFile[1], "&"};
 
-            processBeans.add(new ProcessBean(client, commands, loggerAndFile[0]));
+            processBeans.add(new ProcessBean(sender, commands, loggerAndFile[0]));
         }
         return processBeans;
     }
@@ -93,7 +93,7 @@ public class BlactcatLogExceptionCollector {
 
     @Data @AllArgsConstructor
     private static class ProcessBean {
-        private final BlackcatReqSender client;
+        private final BlackcatReqSender sender;
         private final String[] commands;
         private final String logger;
 
@@ -104,8 +104,8 @@ public class BlactcatLogExceptionCollector {
         private EvictingQueue<Object> evictingQueue = EvictingQueue.create(10);
         private List<String> exceptionStack = new ArrayList<>();
 
-        public ProcessBean(BlackcatReqSender client, String[] commands, String logger) {
-            this.client = client;
+        public ProcessBean(BlackcatReqSender sender, String[] commands, String logger) {
+            this.sender = sender;
             this.commands = commands;
             this.logger = logger;
 
@@ -170,17 +170,17 @@ public class BlactcatLogExceptionCollector {
             if (exceptionNames.length() == 0) return;
 
             // exception found
-            val blackcatReq = createBlackcatException(lastNormalLine, exceptionNames);
+            val blackcatReq = createBlackcatLogException(lastNormalLine, exceptionNames);
 
-            client.send(blackcatReq);
+            sender.send(blackcatReq);
         }
 
-        private BlackcatMsg.BlackcatReq createBlackcatException(String lastLine, StringBuilder exceptionNames) {
+        private BlackcatMsg.BlackcatReq createBlackcatLogException(String lastLine, StringBuilder exceptionNames) {
             val tcode = findTcode(lastLine);
             val tid = findTid(lastLine);
             val timestamp = findTimestamp(lastLine);
 
-            val blackcatExceptionBuilder = BlackcatMsg.BlackcatLogException.newBuilder()
+            val blackcatLogExceptionBuilder = BlackcatMsg.BlackcatLogException.newBuilder()
                     .setLogger(logger)
                     .setTcode(tcode)
                     .setTid(tid)
@@ -190,14 +190,14 @@ public class BlactcatLogExceptionCollector {
 
             return BlackcatMsg.BlackcatReq.newBuilder()
                     .setBlackcatReqHead(Blackcats.buildHead(BlackcatLogException))
-                    .setBlackcatLogException(blackcatExceptionBuilder)
+                    .setBlackcatLogException(blackcatLogExceptionBuilder)
                     .build();
         }
 
         private String findTimestamp(String line) {
             if (line == null) return "unknown";
 
-            val matcher = Consts.EXCEPTION_PATTERN.matcher(line);
+            val matcher = Consts.NORMAL_LINE_PATTERN.matcher(line);
             return matcher.find() ? matcher.group(1) : "unknown";
         }
 

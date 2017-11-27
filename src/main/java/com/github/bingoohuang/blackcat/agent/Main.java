@@ -2,9 +2,13 @@ package com.github.bingoohuang.blackcat.agent;
 
 import com.github.bingoohuang.blackcat.agent.collectors.*;
 import com.github.bingoohuang.blackcat.sdk.netty.BlackcatNettyClient;
+import com.github.bingoohuang.blackcat.sdk.netty.BlackcatReqSender;
+import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg;
 import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.collect.ImmutableList;
 import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import lombok.Synchronized;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.hyperic.sigar.SigarException;
@@ -31,21 +35,19 @@ public class Main {
 //                new BlackcatRedisInfoCollector()
         );
 
-        BlackcatNettyClient client = null;
+        boolean send = options.has("send");
+        val client = createNettyClient(collectors, send);
+        val sender = createSender(options, client, send);
 
-        if (options.has("send")) {
-            client = new BlackcatNettyClient();
-            client.connect();
+        if (sender == null) {
+            System.out.printf("at least one of --print or --send argument is required!");
+            return;
+        }
 
-            for (val collector : collectors) {
-                client.register(collector);
-            }
-
-            val logsConfig = logs.value(options);
-            if (StringUtils.isNotBlank(logsConfig)) {
-                val logExceptionCollector = new BlactcatLogExceptionCollector(client, logsConfig, 30);
-                logExceptionCollector.start();
-            }
+        val logsConfig = logs.value(options);
+        if (StringUtils.isNotBlank(logsConfig)) {
+            val logExceptionCollector = new BlactcatLogExceptionCollector(sender, logsConfig, 10);
+            logExceptionCollector.start();
         }
 
         while (true) {
@@ -53,11 +55,56 @@ public class Main {
                 val req = collector.collect();
                 if (!req.isPresent()) continue;
 
-                if (client != null) client.send(req.get());
-                if (options.has("print")) System.out.println(req.get());
+                sender.send(req.get());
             }
 
             Blackcats.sleep(1, TimeUnit.MINUTES);
+        }
+    }
+
+    private static BlackcatNettyClient createNettyClient(ImmutableList<BlackcatCollector> collectors, boolean send) {
+        if (!send) return null;
+
+        val client = new BlackcatNettyClient();
+        client.connect();
+
+        for (val collector : collectors) {
+            client.register(collector);
+        }
+
+        return client;
+    }
+
+    private static BlackcatReqSender createSender(OptionSet options, BlackcatNettyClient client, boolean send) {
+        val print = options.has("print");
+
+        if (print && send) {
+            val nettyClient = client;
+            return new BlackcatReqSender() {
+                @Synchronized
+                @Override public void send(BlackcatMsg.BlackcatReq req) {
+                    System.out.println(req);
+
+                    nettyClient.send(req);
+                }
+            };
+        } else if (print) {
+            return new BlackcatReqSender() {
+                @Synchronized
+                @Override public void send(BlackcatMsg.BlackcatReq req) {
+                    System.out.println(req);
+                }
+            };
+        } else if (send) {
+            val nettyClient = client;
+            return new BlackcatReqSender() {
+                @Synchronized
+                @Override public void send(BlackcatMsg.BlackcatReq req) {
+                    nettyClient.send(req);
+                }
+            };
+        } else {
+            return null;
         }
     }
 

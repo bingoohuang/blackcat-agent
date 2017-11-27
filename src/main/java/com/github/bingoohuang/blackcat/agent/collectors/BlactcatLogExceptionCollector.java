@@ -22,6 +22,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import static com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReqHead.ReqType.BlackcatLogException;
+
 @AllArgsConstructor
 public class BlactcatLogExceptionCollector {
     private final BlackcatReqSender client;
@@ -33,7 +35,7 @@ public class BlactcatLogExceptionCollector {
         val loggers = Splitter.on(',').omitEmptyStrings().trimResults().splitToList(logFiles);
         val processBeans = Lists.<ProcessBean>newArrayListWithCapacity(loggers.size());
         for (val logFile : loggers) {
-            String[] loggerAndFile = logFile.split(":");
+            val loggerAndFile = logFile.split(":");
             val commands = new String[]{"/bin/bash", "-c", "tail -F " + loggerAndFile[1], "&"};
 
             processBeans.add(new ProcessBean(client, commands, loggerAndFile[0]));
@@ -60,7 +62,7 @@ public class BlactcatLogExceptionCollector {
 
         private String readLine() throws IOException {
             while (reader.ready()) {
-                int chr = reader.read();
+                val chr = reader.read();
                 if (chr == -1) break;
 
                 lineStringBuilder.append((char) chr);
@@ -76,7 +78,7 @@ public class BlactcatLogExceptionCollector {
     }
 
     interface Consts {
-        Pattern NORMAL_LINE_START = Pattern.compile("^([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}) .*", Pattern.DOTALL); // 2017-11-20 03:58:48.167
+        Pattern NORMAL_LINE_PATTERN = Pattern.compile("^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) .*", Pattern.DOTALL); // 2017-11-20 03:58:48.167
         Pattern EXCEPTION_PATTERN = Pattern.compile("\\b\\S+Exception:"); // java.io.InvalidClassException:
         // tenantCode[1704421450] tenantId[94c63603-e487-4cb3-bc98-6129ec616722]
         Pattern TCODE_PATTERN = Pattern.compile("tenantCode\\[(\\d+)\\]");
@@ -123,16 +125,16 @@ public class BlactcatLogExceptionCollector {
         }
 
         public void rotateCheck() {
-            String lastLine = null;
+            String lastNormalLine = null;
             try {
                 while (true) {
                     val line = lineReader.readLine();
                     if (line == null) break;
 
-                    if (Consts.NORMAL_LINE_START.matcher(line).matches()) {
-                        detectException(lastLine);
+                    if (Consts.NORMAL_LINE_PATTERN.matcher(line).matches()) {
+                        detectException(lastNormalLine);
                         evictingQueue.add(line);
-                        lastLine = line;
+                        lastNormalLine = line;
                     } else {
                         exceptionStack.add(line);
                     }
@@ -141,18 +143,18 @@ public class BlactcatLogExceptionCollector {
                 reset();
             }
 
-            detectException(lastLine);
+            detectException(lastNormalLine);
         }
 
-        private void detectException(String lastLine) {
+        private void detectException(String lastNormalLine) {
             if (exceptionStack.isEmpty()) return;
 
             evictingQueue.add(Consts.JOINER.join(exceptionStack));
-            findException(lastLine);
+            findException(lastNormalLine);
             exceptionStack.clear();
         }
 
-        private void findException(String lastLine) {
+        private void findException(String lastNormalLine) {
             val exceptionNames = new StringBuilder();
             for (val line : exceptionStack) {
                 val matcher = Consts.EXCEPTION_PATTERN.matcher(line);
@@ -164,7 +166,7 @@ public class BlactcatLogExceptionCollector {
             if (exceptionNames.length() == 0) return;
 
             // exception found
-            val blackcatReq = createBlackcatException(lastLine, exceptionNames);
+            val blackcatReq = createBlackcatException(lastNormalLine, exceptionNames);
 
             client.send(blackcatReq);
         }
@@ -174,7 +176,7 @@ public class BlactcatLogExceptionCollector {
             val tid = findTid(lastLine);
             val timestamp = findTimestamp(lastLine);
 
-            val blackcatExceptionBuilder = BlackcatMsg.BlackcatException.newBuilder()
+            val blackcatExceptionBuilder = BlackcatMsg.BlackcatLogException.newBuilder()
                     .setLogger(logger)
                     .setTcode(tcode)
                     .setTid(tid)
@@ -183,29 +185,29 @@ public class BlactcatLogExceptionCollector {
                     .setContextLogs(Consts.JOINER.join(evictingQueue));
 
             return BlackcatMsg.BlackcatReq.newBuilder()
-                    .setBlackcatReqHead(Blackcats.buildHead(BlackcatMsg.BlackcatReqHead.ReqType.BlackcatException))
-                    .setBlackcatException(blackcatExceptionBuilder)
+                    .setBlackcatReqHead(Blackcats.buildHead(BlackcatLogException))
+                    .setBlackcatLogException(blackcatExceptionBuilder)
                     .build();
         }
 
-        private String findTimestamp(String lastLine) {
-            if (lastLine == null) return "unknown";
+        private String findTimestamp(String line) {
+            if (line == null) return "unknown";
 
-            val matcher = Consts.EXCEPTION_PATTERN.matcher(lastLine);
+            val matcher = Consts.EXCEPTION_PATTERN.matcher(line);
             return matcher.find() ? matcher.group(1) : "unknown";
         }
 
-        private String findTid(String lastLine) {
-            if (lastLine == null) return "unknown";
+        private String findTid(String line) {
+            if (line == null) return "unknown";
 
-            val matcher = Consts.TID_PATTERN.matcher(lastLine);
+            val matcher = Consts.TID_PATTERN.matcher(line);
             return matcher.find() ? matcher.group(1) : "unknown";
         }
 
-        private String findTcode(String lastLine) {
-            if (lastLine == null) return "unknown";
+        private String findTcode(String line) {
+            if (line == null) return "unknown";
 
-            val matcher = Consts.TCODE_PATTERN.matcher(lastLine);
+            val matcher = Consts.TCODE_PATTERN.matcher(line);
             return matcher.find() ? matcher.group(1) : "unknown";
         }
     }

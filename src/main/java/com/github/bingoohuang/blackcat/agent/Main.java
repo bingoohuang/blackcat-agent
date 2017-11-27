@@ -16,8 +16,9 @@ public class Main {
         val parser = new OptionParser();
         parser.accepts("print");
         parser.accepts("send");
-        val logs = parser.accepts("logs").withOptionalArg().ofType(String.class);
 
+        // eg: --logs=yoga:/home/app/tomcat/yoga-system/logs/catalina.out,et:/home/app/et-server/et-server.log
+        val logs = parser.accepts("logs").withOptionalArg().ofType(String.class);
         val options = parser.parse(args);
 
         val collectors = ImmutableList.of(
@@ -40,7 +41,7 @@ public class Main {
                 client.register(collector);
             }
 
-            String logsConfig = logs.value(options);
+            val logsConfig = logs.value(options);
             if (StringUtils.isNotBlank(logsConfig)) {
                 val logExceptionCollector = new BlactcatLogExceptionCollector(client, logsConfig, 30);
                 logExceptionCollector.start();

@@ -32,15 +32,7 @@ public class BlactcatLogExceptionCollector {
 
     @SneakyThrows
     public void start() {
-        val loggers = Splitter.on(',').omitEmptyStrings().trimResults().splitToList(logFiles);
-        val processBeans = Lists.<ProcessBean>newArrayListWithCapacity(loggers.size());
-        for (val logFile : loggers) {
-            val loggerAndFile = logFile.split(":");
-            val commands = new String[]{"/bin/bash", "-c", "tail -F " + loggerAndFile[1], "&"};
-
-            processBeans.add(new ProcessBean(client, commands, loggerAndFile[0]));
-        }
-
+        val processBeans = parseLogConfigs();
         if (processBeans.isEmpty()) return;
 
         val executorService = Executors.newSingleThreadScheduledExecutor();
@@ -49,6 +41,18 @@ public class BlactcatLogExceptionCollector {
                 processBean.rotateCheck();
             }
         }, rotateSeconds, rotateSeconds, TimeUnit.SECONDS);
+    }
+
+    private List<ProcessBean> parseLogConfigs() {
+        val loggers = Splitter.on(',').omitEmptyStrings().trimResults().splitToList(logFiles);
+        val processBeans = Lists.<ProcessBean>newArrayListWithCapacity(loggers.size());
+        for (val logFile : loggers) {
+            val loggerAndFile = logFile.split(":");
+            val commands = new String[]{"/bin/bash", "-c", "tail -F " + loggerAndFile[1], "&"};
+
+            processBeans.add(new ProcessBean(client, commands, loggerAndFile[0]));
+        }
+        return processBeans;
     }
 
 

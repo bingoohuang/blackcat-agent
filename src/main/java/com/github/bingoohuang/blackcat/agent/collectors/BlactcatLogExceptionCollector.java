@@ -4,6 +4,7 @@ import com.alibaba.fastjson.util.IOUtils;
 import com.github.bingoohuang.blackcat.sdk.netty.BlackcatReqSender;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg;
 import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
+import com.github.bingoohuang.blackcat.sdk.utils.ProcessExecutor;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.EvictingQueue;
@@ -129,6 +130,10 @@ public class BlactcatLogExceptionCollector {
         }
 
         public void rotateCheck() {
+            if (!ProcessExecutor.isAlive(process)) {
+                reset();
+            }
+
             String lastNormalLine = null;
             try {
                 while (true) {
@@ -143,7 +148,7 @@ public class BlactcatLogExceptionCollector {
                         exceptionStack.add(line);
                     }
                 }
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 reset();
             }
 

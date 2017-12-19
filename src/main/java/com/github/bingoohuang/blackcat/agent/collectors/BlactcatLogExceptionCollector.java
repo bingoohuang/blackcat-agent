@@ -13,6 +13,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.val;
+import org.apache.commons.lang3.StringUtils;
+import org.n3r.diamond.client.Miner;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -92,6 +94,8 @@ public class BlactcatLogExceptionCollector {
         Joiner JOINER = Joiner.on("");
     }
 
+    static Splitter commaSplitter = Splitter.on(',').trimResults().omitEmptyStrings();
+
     @Data @AllArgsConstructor
     private static class ProcessBean {
         private final BlackcatReqSender sender;
@@ -164,32 +168,46 @@ public class BlactcatLogExceptionCollector {
         }
 
         private void findException(String lastNormalLine) {
-            val exceptionNames = new StringBuilder();
+            val exceptionNamesBuilder = new StringBuilder();
             for (val line : exceptionStack) {
                 val matcher = Consts.EXCEPTION_PATTERN.matcher(line);
                 if (matcher.find()) {
-                    exceptionNames.append(line);
+                    exceptionNamesBuilder.append(line);
                 }
             }
 
-            if (exceptionNames.length() == 0) return;
+            if (exceptionNamesBuilder.length() == 0) return;
 
-            // exception found
+            val exceptionNames = exceptionNamesBuilder.toString();
+
+            if (isExceptionConfigIgnored(exceptionNames)) return;
+
             val blackcatReq = createBlackcatLogException(lastNormalLine, exceptionNames);
-
             sender.send(blackcatReq);
         }
 
-        private BlackcatMsg.BlackcatReq createBlackcatLogException(String lastLine, StringBuilder exceptionNames) {
-            val tcode = findTcode(lastLine);
-            val tid = findTid(lastLine);
-            val timestamp = findTimestamp(lastLine);
+        private boolean isExceptionConfigIgnored(String exceptionNames) {
+            val miner = new Miner().getMiner("blackcat", "log.exception");
+            val ignoreContains = miner.getString("ignore.contains");
+            if (StringUtils.isEmpty(ignoreContains)) return false;
+
+            for (val ignoreContain : commaSplitter.split(ignoreContains)) {
+                if (exceptionNames.contains(ignoreContain)) return true;
+            }
+
+            return false;
+        }
+
+        private BlackcatMsg.BlackcatReq createBlackcatLogException(String lastLine, String exceptionNames) {
+            val tcode = findPattern(lastLine, Consts.TCODE_PATTERN);
+            val tid = findPattern(lastLine, Consts.TID_PATTERN);
+            val timestamp = findPattern(lastLine, Consts.NORMAL_LINE_PATTERN);
 
             val blackcatLogExceptionBuilder = BlackcatMsg.BlackcatLogException.newBuilder()
                     .setLogger(logger)
                     .setTcode(tcode)
                     .setTid(tid)
-                    .setExceptionNames(exceptionNames.toString())
+                    .setExceptionNames(exceptionNames)
                     .setTimestamp(timestamp)
                     .setContextLogs(Consts.JOINER.join(evictingQueue));
 
@@ -199,24 +217,10 @@ public class BlactcatLogExceptionCollector {
                     .build();
         }
 
-        private String findTimestamp(String line) {
+        private String findPattern(String line, Pattern pattern) {
             if (line == null) return "unknown";
 
-            val matcher = Consts.NORMAL_LINE_PATTERN.matcher(line);
-            return matcher.find() ? matcher.group(1) : "unknown";
-        }
-
-        private String findTid(String line) {
-            if (line == null) return "unknown";
-
-            val matcher = Consts.TID_PATTERN.matcher(line);
-            return matcher.find() ? matcher.group(1) : "unknown";
-        }
-
-        private String findTcode(String line) {
-            if (line == null) return "unknown";
-
-            val matcher = Consts.TCODE_PATTERN.matcher(line);
+            val matcher = pattern.matcher(line);
             return matcher.find() ? matcher.group(1) : "unknown";
         }
     }

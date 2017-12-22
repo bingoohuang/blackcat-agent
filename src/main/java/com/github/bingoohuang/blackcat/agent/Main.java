@@ -3,20 +3,17 @@ package com.github.bingoohuang.blackcat.agent;
 import com.github.bingoohuang.blackcat.agent.collectors.*;
 import com.github.bingoohuang.blackcat.sdk.netty.BlackcatNettyClient;
 import com.github.bingoohuang.blackcat.sdk.netty.BlackcatReqSender;
-import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg;
 import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.collect.ImmutableList;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import lombok.Synchronized;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
-import org.hyperic.sigar.SigarException;
 
 import java.util.concurrent.TimeUnit;
 
 public class Main {
-    public static void main(String[] args) throws SigarException {
+    public static void main(String[] args) {
         val parser = new OptionParser();
         parser.accepts("print");
         parser.accepts("send");
@@ -80,29 +77,16 @@ public class Main {
 
         if (print && send) {
             val nettyClient = client;
-            return new BlackcatReqSender() {
-                @Synchronized
-                @Override public void send(BlackcatMsg.BlackcatReq req) {
-                    System.out.println(req);
+            return req -> {
+                System.out.println(req);
 
-                    nettyClient.send(req);
-                }
+                nettyClient.send(req);
             };
         } else if (print) {
-            return new BlackcatReqSender() {
-                @Synchronized
-                @Override public void send(BlackcatMsg.BlackcatReq req) {
-                    System.out.println(req);
-                }
-            };
+            return req -> System.out.println(req);
         } else if (send) {
             val nettyClient = client;
-            return new BlackcatReqSender() {
-                @Synchronized
-                @Override public void send(BlackcatMsg.BlackcatReq req) {
-                    nettyClient.send(req);
-                }
-            };
+            return req -> nettyClient.send(req);
         } else {
             return null;
         }

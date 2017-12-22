@@ -4,7 +4,6 @@ import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatProcess;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReq;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReqHead.ReqType;
 import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatWarnConfig;
-import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatWarnConfig.BlackcatWarnProcess;
 import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
@@ -39,7 +38,7 @@ public class BlackcatProcessCollector implements BlackcatCollector {
     }
 
     @SneakyThrows
-    private void ps(List<Long> pids, BlackcatWarnProcess warnProcess,
+    private void ps(List<Long> pids, BlackcatWarnConfig.BlackcatWarnProcess warnProcess,
                     BlackcatProcess.Builder builder, String queryCondition
     ) {
         // Process Table Query Language: https://support.hyperic.com/display/SIGAR/PTQL
@@ -66,7 +65,7 @@ public class BlackcatProcessCollector implements BlackcatCollector {
         }
     }
 
-    volatile List<BlackcatWarnProcess> warnProcesses;
+    volatile List<BlackcatWarnConfig.BlackcatWarnProcess> warnProcesses;
 
     @Subscribe
     public void configRegister(BlackcatWarnConfig blackcatWarnConfig) {

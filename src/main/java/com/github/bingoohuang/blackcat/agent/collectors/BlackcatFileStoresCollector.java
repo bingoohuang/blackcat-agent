@@ -7,8 +7,6 @@ import com.google.common.base.Optional;
 import lombok.val;
 import oshi.SystemInfo;
 
-import static com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReqHead.ReqType;
-
 public class BlackcatFileStoresCollector
         implements BlackcatCollector {
 
@@ -32,7 +30,7 @@ public class BlackcatFileStoresCollector
 
 
         val blackcatReq = BlackcatReq.newBuilder()
-                .setBlackcatReqHead(Blackcats.buildHead(ReqType.BlackcatFileStores))
+                .setBlackcatReqHead(Blackcats.buildHead(BlackcatMsg.BlackcatReqHead.ReqType.BlackcatFileStores))
                 .setBlackcatFileStores(builder).build();
 
         return Optional.of(blackcatReq);

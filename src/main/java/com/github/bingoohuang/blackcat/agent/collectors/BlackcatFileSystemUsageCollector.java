@@ -10,7 +10,6 @@ import com.google.common.base.Optional;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.hyperic.sigar.FileSystem;
-import org.hyperic.sigar.SigarException;
 
 public class BlackcatFileSystemUsageCollector implements BlackcatCollector {
     @Override @SneakyThrows
@@ -66,7 +65,7 @@ public class BlackcatFileSystemUsageCollector implements BlackcatCollector {
         return Optional.of(blackcatReq);
     }
 
-    public static void main(String[] args) throws SigarException {
+    public static void main(String[] args) {
         new BlackcatFileSystemUsageCollector().collect();
     }
 }

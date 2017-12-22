@@ -25,8 +25,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import static com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg.BlackcatReqHead.ReqType.BlackcatLogException;
-
 @AllArgsConstructor
 public class BlactcatLogExceptionCollector {
     private final BlackcatReqSender sender;
@@ -92,9 +90,8 @@ public class BlactcatLogExceptionCollector {
         Pattern TID_PATTERN = Pattern.compile("tenantId\\[(.*?)\\]");
 
         Joiner JOINER = Joiner.on("");
+        Splitter COMMA_SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
     }
-
-    static Splitter commaSplitter = Splitter.on(',').trimResults().omitEmptyStrings();
 
     @Data @AllArgsConstructor
     private static class ProcessBean {
@@ -191,7 +188,7 @@ public class BlactcatLogExceptionCollector {
             val ignoreContains = miner.getString("ignore.contains");
             if (StringUtils.isEmpty(ignoreContains)) return false;
 
-            for (val ignoreContain : commaSplitter.split(ignoreContains)) {
+            for (val ignoreContain : Consts.COMMA_SPLITTER.split(ignoreContains)) {
                 if (exceptionNames.contains(ignoreContain)) return true;
             }
 
@@ -212,7 +209,7 @@ public class BlactcatLogExceptionCollector {
                     .setContextLogs(Consts.JOINER.join(evictingQueue));
 
             return BlackcatMsg.BlackcatReq.newBuilder()
-                    .setBlackcatReqHead(Blackcats.buildHead(BlackcatLogException))
+                    .setBlackcatReqHead(Blackcats.buildHead(BlackcatMsg.BlackcatReqHead.ReqType.BlackcatLogException))
                     .setBlackcatLogException(blackcatLogExceptionBuilder)
                     .build();
         }

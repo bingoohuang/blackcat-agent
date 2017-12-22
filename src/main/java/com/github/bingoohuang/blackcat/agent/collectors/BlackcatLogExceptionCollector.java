@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 @AllArgsConstructor
-public class BlactcatLogExceptionCollector {
+public class BlackcatLogExceptionCollector {
     private final BlackcatReqSender sender;
     private final String logFiles;
     private final long rotateSeconds;
@@ -188,8 +188,10 @@ public class BlactcatLogExceptionCollector {
             val ignoreContains = miner.getString("ignore.contains");
             if (StringUtils.isEmpty(ignoreContains)) return false;
 
-            for (val ignoreContain : Consts.COMMA_SPLITTER.split(ignoreContains)) {
-                if (exceptionNames.contains(ignoreContain)) return true;
+            for (String ignoreContain : Consts.COMMA_SPLITTER.split(ignoreContains)) {
+                if (exceptionNames.contains(ignoreContain)) {
+                    return true;
+                }
             }
 
             return false;

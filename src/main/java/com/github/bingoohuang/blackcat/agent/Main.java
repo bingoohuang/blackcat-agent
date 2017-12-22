@@ -43,7 +43,7 @@ public class Main {
 
         val logsConfig = logs.value(options);
         if (StringUtils.isNotBlank(logsConfig)) {
-            val logExceptionCollector = new BlactcatLogExceptionCollector(sender, logsConfig, 10);
+            val logExceptionCollector = new BlackcatLogExceptionCollector(sender, logsConfig, 10);
             logExceptionCollector.start();
         }
 

@@ -1,25 +1,22 @@
 package com.github.bingoohuang.blackcat.agent.collectors;
 
 import com.github.bingoohuang.blackcat.sdk.netty.BlackcatReqSender;
-import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg;
 import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.google.common.base.Charsets;
+import com.google.common.io.ByteSource;
 import com.google.common.io.Files;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
-public class BlactcatLogExceptionCollectorTest {
+public class BlackcatLogExceptionCollectorTest {
     @Test @SneakyThrows
     public void test() {
-        val client = new BlackcatReqSender() {
-            @Override public void send(BlackcatMsg.BlackcatReq req) {
-                System.out.println(req);
-            }
-        };
+        BlackcatReqSender client = req -> System.out.println(req);
 
         File a1 = File.createTempFile("aaa", "a1");
         a1.deleteOnExit();
@@ -27,7 +24,7 @@ public class BlactcatLogExceptionCollectorTest {
         b1.deleteOnExit();
 
         String logFiles = "a1:" + a1.getAbsolutePath() + ",b1:" + b1.getAbsolutePath();
-        val collector = new BlactcatLogExceptionCollector(client, logFiles, 10);
+        val collector = new BlackcatLogExceptionCollector(client, logFiles, 10);
         collector.start();
 
 
@@ -54,6 +51,16 @@ public class BlactcatLogExceptionCollectorTest {
                 "        at com.raiyee.hi.base.authc.enviroment.WxContext.getCpUserIfNecessary(WxContext.java:19) ~[classes/:na]\n", b1, Charsets.UTF_8);
         Files.append("", b1, Charsets.UTF_8);
         Files.append("", b1, Charsets.UTF_8);
+
+        val inputStream = Blackcats.classpathInputStream("test.log");
+        val byteSource = new ByteSource() {
+            public InputStream openStream() {
+                return inputStream;
+            }
+        };
+
+        String text = byteSource.asCharSource(Charsets.UTF_8).read();
+        Files.append(text, a1, Charsets.UTF_8);
 
 //        while (true) {
         Blackcats.sleep(1, TimeUnit.MINUTES);

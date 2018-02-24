@@ -6,6 +6,7 @@ import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg;
 import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.github.bingoohuang.blackcat.sdk.utils.ProcessExecutor;
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.Lists;
@@ -14,6 +15,8 @@ import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
 import org.n3r.diamond.client.Miner;
 
 import java.io.BufferedReader;
@@ -165,6 +168,15 @@ public class BlackcatLogExceptionCollector {
         }
 
         private void findException(String lastNormalLine) {
+            val exceptionNames = createExceptionNames();
+            if (exceptionNames.isEmpty()) return;
+            if (isExceptionConfigIgnored(exceptionNames)) return;
+
+            val blackcatReq = createBlackcatLogException(lastNormalLine, exceptionNames);
+            if (blackcatReq.isPresent()) sender.send(blackcatReq.get());
+        }
+
+        private String createExceptionNames() {
             val exceptionNamesBuilder = new StringBuilder();
             for (val line : exceptionStack) {
                 val matcher = Consts.EXCEPTION_PATTERN.matcher(line);
@@ -173,14 +185,7 @@ public class BlackcatLogExceptionCollector {
                 }
             }
 
-            if (exceptionNamesBuilder.length() == 0) return;
-
-            val exceptionNames = exceptionNamesBuilder.toString();
-
-            if (isExceptionConfigIgnored(exceptionNames)) return;
-
-            val blackcatReq = createBlackcatLogException(lastNormalLine, exceptionNames);
-            sender.send(blackcatReq);
+            return exceptionNamesBuilder.toString();
         }
 
         private boolean isExceptionConfigIgnored(String exceptionNames) {
@@ -197,10 +202,22 @@ public class BlackcatLogExceptionCollector {
             return false;
         }
 
-        private BlackcatMsg.BlackcatReq createBlackcatLogException(String lastLine, String exceptionNames) {
+        private Optional<BlackcatMsg.BlackcatReq> createBlackcatLogException(String lastLine, String exceptionNames) {
             val tcode = findPattern(lastLine, Consts.TCODE_PATTERN);
             val tid = findPattern(lastLine, Consts.TID_PATTERN);
             val timestamp = findPattern(lastLine, Consts.NORMAL_LINE_PATTERN);
+
+            // 在日志做CopyTruncate时，会导致日志文件重新扫描，此时捕获的日志时间戳与当前时间距离较远
+            // 如果发现日志时间在1个小时之前，则忽略此异常日志
+            try {
+                val tt = DateTime.parse(timestamp, DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS"));
+                val oneHourMillis = 1 * 60 * 1000L;
+                if (tt.getMillis() - System.currentTimeMillis() > oneHourMillis) {
+                    return Optional.absent();
+                }
+            } catch (IllegalArgumentException ex) {
+                // ignore parse exception
+            }
 
             val blackcatLogExceptionBuilder = BlackcatMsg.BlackcatLogException.newBuilder()
                     .setLogger(logger)
@@ -210,10 +227,10 @@ public class BlackcatLogExceptionCollector {
                     .setTimestamp(timestamp)
                     .setContextLogs(Consts.JOINER.join(evictingQueue));
 
-            return BlackcatMsg.BlackcatReq.newBuilder()
+            return Optional.of(BlackcatMsg.BlackcatReq.newBuilder()
                     .setBlackcatReqHead(Blackcats.buildHead(BlackcatMsg.BlackcatReqHead.ReqType.BlackcatLogException))
                     .setBlackcatLogException(blackcatLogExceptionBuilder)
-                    .build();
+                    .build());
         }
 
         private String findPattern(String line, Pattern pattern) {

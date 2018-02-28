@@ -211,8 +211,8 @@ public class BlackcatLogExceptionCollector {
             // 如果发现日志时间在1个小时之前，则忽略此异常日志
             try {
                 val tt = DateTime.parse(timestamp, DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS"));
-                val oneHourMillis = 1 * 60 * 1000L;
-                if (tt.getMillis() - System.currentTimeMillis() > oneHourMillis) {
+                val oneHourMillis = 1 * 60 * 60 * 1000L;
+                if (System.currentTimeMillis() - tt.getMillis()  > oneHourMillis) {
                     return Optional.absent();
                 }
             } catch (IllegalArgumentException ex) {

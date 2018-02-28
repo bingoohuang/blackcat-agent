@@ -6,7 +6,6 @@ import com.github.bingoohuang.blackcat.sdk.protobuf.BlackcatMsg;
 import com.github.bingoohuang.blackcat.sdk.utils.Blackcats;
 import com.github.bingoohuang.blackcat.sdk.utils.ProcessExecutor;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.Lists;
@@ -24,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -172,8 +172,8 @@ public class BlackcatLogExceptionCollector {
             if (exceptionNames.isEmpty()) return;
             if (isExceptionConfigIgnored(exceptionNames)) return;
 
-            val blackcatReq = createBlackcatLogException(lastNormalLine, exceptionNames);
-            if (blackcatReq.isPresent()) sender.send(blackcatReq.get());
+            val req = createBlackcatLogException(lastNormalLine, exceptionNames);
+            if (req.isPresent()) sender.send(req.get());
         }
 
         private String createExceptionNames() {
@@ -213,13 +213,13 @@ public class BlackcatLogExceptionCollector {
                 val tt = DateTime.parse(timestamp, DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS"));
                 val oneHourMillis = 1 * 60 * 60 * 1000L;
                 if (System.currentTimeMillis() - tt.getMillis()  > oneHourMillis) {
-                    return Optional.absent();
+                    return Optional.empty();
                 }
             } catch (IllegalArgumentException ex) {
                 // ignore parse exception
             }
 
-            val blackcatLogExceptionBuilder = BlackcatMsg.BlackcatLogException.newBuilder()
+            val build = BlackcatMsg.BlackcatLogException.newBuilder()
                     .setLogger(logger)
                     .setTcode(tcode)
                     .setTid(tid)
@@ -229,7 +229,7 @@ public class BlackcatLogExceptionCollector {
 
             return Optional.of(BlackcatMsg.BlackcatReq.newBuilder()
                     .setBlackcatReqHead(Blackcats.buildHead(BlackcatMsg.BlackcatReqHead.ReqType.BlackcatLogException))
-                    .setBlackcatLogException(blackcatLogExceptionBuilder)
+                    .setBlackcatLogException(build)
                     .build());
         }
 

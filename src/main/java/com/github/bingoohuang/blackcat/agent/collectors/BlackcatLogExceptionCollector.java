@@ -33,6 +33,11 @@ public class BlackcatLogExceptionCollector {
     private final BlackcatReqSender sender;
     private final String logFiles;
     private final long rotateSeconds;
+    private final long ignoreMillisBefore;
+
+    public BlackcatLogExceptionCollector(BlackcatReqSender sender, String logFiles, long rotateSeconds) {
+        this(sender, logFiles, rotateSeconds, 1 * 60 * 60 * 1000L);
+    }
 
     @SneakyThrows
     public void start() {
@@ -54,7 +59,7 @@ public class BlackcatLogExceptionCollector {
             val loggerAndFile = logFile.split(":");
             val commands = new String[]{"/bin/bash", "-c", "tail -F " + loggerAndFile[1], "&"};
 
-            processBeans.add(new ProcessBean(sender, commands, loggerAndFile[0]));
+            processBeans.add(new ProcessBean(sender, commands, loggerAndFile[0], ignoreMillisBefore));
         }
         return processBeans;
     }
@@ -87,7 +92,7 @@ public class BlackcatLogExceptionCollector {
 
     interface Consts {
         Pattern NORMAL_LINE_PATTERN = Pattern.compile("^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) .*", Pattern.DOTALL); // 2017-11-20 03:58:48.167
-        Pattern EXCEPTION_PATTERN = Pattern.compile("\\b\\S+Exception:"); // java.io.InvalidClassException:
+        Pattern EXCEPTION_PATTERN = Pattern.compile("\\b\\S+Exception\\b"); // java.io.InvalidClassException
         // tenantCode[1704421450] tenantId[94c63603-e487-4cb3-bc98-6129ec616722]
         Pattern TCODE_PATTERN = Pattern.compile("tenantCode\\[(\\d+)\\]");
         Pattern TID_PATTERN = Pattern.compile("tenantId\\[(.*?)\\]");
@@ -101,6 +106,7 @@ public class BlackcatLogExceptionCollector {
         private final BlackcatReqSender sender;
         private final String[] commands;
         private final String logger;
+        private final long ignoreMillisBefore;
 
         private Process process;
         private BufferedReader bufferedReader;
@@ -109,10 +115,12 @@ public class BlackcatLogExceptionCollector {
         private EvictingQueue<Object> evictingQueue = EvictingQueue.create(10);
         private List<String> exceptionStack = new ArrayList<>();
 
-        public ProcessBean(BlackcatReqSender sender, String[] commands, String logger) {
+        public ProcessBean(BlackcatReqSender sender, String[] commands,
+                           String logger, long ignoreMillisBefore) {
             this.sender = sender;
             this.commands = commands;
             this.logger = logger;
+            this.ignoreMillisBefore = ignoreMillisBefore;
 
             createLineReader(commands);
         }
@@ -168,7 +176,7 @@ public class BlackcatLogExceptionCollector {
         }
 
         private void findException(String lastNormalLine) {
-            val exceptionNames = createExceptionNames();
+            val exceptionNames = createExceptionNames(lastNormalLine);
             if (exceptionNames.isEmpty()) return;
             if (isExceptionConfigIgnored(exceptionNames)) return;
 
@@ -176,9 +184,14 @@ public class BlackcatLogExceptionCollector {
             if (req.isPresent()) sender.send(req.get());
         }
 
-        private String createExceptionNames() {
+        private String createExceptionNames(String lastNormalLine) {
             val exceptionNamesBuilder = new StringBuilder();
-            for (val line : exceptionStack) {
+
+            List<String> stack = new ArrayList<>();
+            stack.add(lastNormalLine);
+            stack.addAll(exceptionStack);
+
+            for (val line : stack) {
                 val matcher = Consts.EXCEPTION_PATTERN.matcher(line);
                 if (matcher.find()) {
                     exceptionNamesBuilder.append(line);
@@ -209,14 +222,16 @@ public class BlackcatLogExceptionCollector {
 
             // 在日志做CopyTruncate时，会导致日志文件重新扫描，此时捕获的日志时间戳与当前时间距离较远
             // 如果发现日志时间在1个小时之前，则忽略此异常日志
-            try {
-                val tt = DateTime.parse(timestamp, DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS"));
-                val oneHourMillis = 1 * 60 * 60 * 1000L;
-                if (System.currentTimeMillis() - tt.getMillis()  > oneHourMillis) {
-                    return Optional.empty();
+            if (ignoreMillisBefore > 0) {
+                try {
+                    val tt = DateTime.parse(timestamp, DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS"));
+                    if (System.currentTimeMillis() - tt.getMillis() > ignoreMillisBefore) {
+                        evictingQueue.clear();
+                        return Optional.empty();
+                    }
+                } catch (IllegalArgumentException ex) {
+                    // ignore parse exception
                 }
-            } catch (IllegalArgumentException ex) {
-                // ignore parse exception
             }
 
             val build = BlackcatMsg.BlackcatLogException.newBuilder()
@@ -226,6 +241,7 @@ public class BlackcatLogExceptionCollector {
                     .setExceptionNames(exceptionNames)
                     .setTimestamp(timestamp)
                     .setContextLogs(Consts.JOINER.join(evictingQueue));
+            evictingQueue.clear();
 
             return Optional.of(BlackcatMsg.BlackcatReq.newBuilder()
                     .setBlackcatReqHead(Blackcats.buildHead(BlackcatMsg.BlackcatReqHead.ReqType.BlackcatLogException))

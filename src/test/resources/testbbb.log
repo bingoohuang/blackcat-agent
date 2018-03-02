@@ -263,3 +263,29 @@ Caused by: java.io.IOException: Broken pipe
 	at org.apache.coyote.Response.doWrite(Response.java:491) ~[tomcat-coyote.jar:8.0.36]
 	at org.apache.catalina.connector.OutputBuffer.realWriteBytes(OutputBuffer.java:391) ~[catalina.jar:8.0.36]
 	... 72 common frames omitted
+2018-03-01 17:23:30.280 ali-hd2-hi-app01 [http-nio-8026-exec-15] DEBUG tenantCode[1711440679] tenantId[ceb83774-70dd-4065-a5f2-f2b8a0812f55] eql.com.raiyee.hi.yoga.service.MbrCardService.eql.getMbrCard.result:14 - null
+2018-03-01 17:23:30.281 ali-hd2-hi-app01 [http-nio-8026-exec-15] ERROR tenantCode[1711440679] tenantId[ceb83774-70dd-4065-a5f2-f2b8a0812f55] com.raiyee.hi.base.config.AopTransaction:40 - MbrCardForbiddenTaskService.createForbiddenTask(..)系统异常,回滚事务...java.lang.NullPointerException
+	at com.raiyee.hi.yoga.service.MbrCardService.getSimpleMbrCard(MbrCardService.java:621)
+	at com.raiyee.hi.yoga.service.MbrCardService.getMbrCard(MbrCardService.java:604)
+	at com.raiyee.hi.yoga.service.MbrCardService.getMbrCardDetails(MbrCardService.java:99)
+	at com.raiyee.hi.yoga.service.MbrCardService$$FastClassBySpringCGLIB$$94d24eb4.invoke()
+	at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:204)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.invokeJoinpoint(CglibAopProxy.java:717)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:157)
+	at org.springframework.aop.interceptor.ExposeInvocationInterceptor.invoke(ExposeInvocationInterceptor.java:92)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:653)
+	at com.raiyee.hi.yoga.service.MbrCardService$$EnhancerBySpringCGLIB$$e61e3f4.getMbrCardDetails()
+	at com.raiyee.hi.yoga.service.MbrCardForbiddenTaskService.lambda$getMbrCardDetails$5(MbrCardForbiddenTaskService.java:332)
+	at java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:193)
+	at java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1374)
+	at java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:481)
+2017-11-19 23:54:53.026 ali-hd2-hi-app01 [http-nio-8026-exec-8] INFO  tenantCode[99999999] tenantId[94c63603-e487-4cb3-bc98-6129ec616722] com.raiyee.hi.base.authc.filter.AutoAuthcFilter:103 - 当前链接使用snsapi_base方式授权,获取用户信息
+2017-11-19 23:54:53.027 ali-hd2-hi-app01 [http-nio-8026-exec-8] INFO  tenantCode[99999999] tenantId[94c63603-e487-4cb3-bc98-6129ec616722] com.raiyee.hi.api.cpbas.merchant.UserManagementApi:50 - spring rest client sync 616372a8-53dd-459d-b50e-2219459e39f1 request: POST http://127.0.0.1:18020/v1/user-management/get-user-by-code headers: body: code=001zrOc52UiNJK0RWhb52wk5d52zrOco&tid=94c63603-e487-4cb3-bc98-6129ec616722
+2017-11-19 23:54:53.162 ali-hd2-hi-app01 [http-nio-8026-exec-8] ERROR tenantCode[99999999] tenantId[94c63603-e487-4cb3-bc98-6129ec616722] com.raiyee.hi.base.authc.filter.AutoAuthcFilter:53 - 自动登录失败
+com.github.bingoohuang.springrestclient.exception.RestException: 获取refreshAccessToken失败!
+    at com.github.bingoohuang.springrestclient.utils.RestReq.processStatusExceptionMappings(RestReq.java:457) ~[spring-rest-client-0.0.19.jar:na]
+    at com.github.bingoohuang.springrestclient.utils.RestReq.request(RestReq.java:336) ~[spring-rest-client-0.0.19.jar:na]
+    at com.github.bingoohuang.springrestclient.utils.RestReq.post(RestReq.java:143) ~[spring-rest-client-0.0.19.jar:na]
+    at com.raiyee.hi.api.cpbas.merchant.UserManagementApi$$BINGOOASM$$Impl.getUserByCode(Unknown Source) ~[na:na]
+    at com.raiyee.hi.base.authc.enviroment.WxContext.getCpUserIfNecessary(WxContext.java:19) ~[classes/:na]

@@ -12,6 +12,7 @@ import com.google.common.collect.Lists;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
@@ -28,7 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-@AllArgsConstructor
+@AllArgsConstructor @Slf4j
 public class BlackcatLogExceptionCollector {
     private final BlackcatReqSender sender;
     private final String logFiles;
@@ -36,7 +37,7 @@ public class BlackcatLogExceptionCollector {
     private final long ignoreMillisBefore;
 
     public BlackcatLogExceptionCollector(BlackcatReqSender sender, String logFiles, long rotateSeconds) {
-        this(sender, logFiles, rotateSeconds, 1 * 60 * 60 * 1000L);
+        this(sender, logFiles, rotateSeconds, 3 * 60 * 60 * 1000L);
     }
 
     @SneakyThrows
@@ -181,7 +182,10 @@ public class BlackcatLogExceptionCollector {
             if (isExceptionConfigIgnored(exceptionNames)) return;
 
             val req = createBlackcatLogException(lastNormalLine, exceptionNames);
-            if (req.isPresent()) sender.send(req.get());
+            if (req.isPresent()) {
+                log.warn("found exceptiong in log:{}", req.get());
+                sender.send(req.get());
+            }
         }
 
         private String createExceptionNames(String lastNormalLine) {

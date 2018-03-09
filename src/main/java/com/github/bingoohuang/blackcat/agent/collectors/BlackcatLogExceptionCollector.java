@@ -127,12 +127,16 @@ public class BlackcatLogExceptionCollector {
         }
 
         public void reset() {
-            process.destroy();
-            IOUtils.close(bufferedReader);
+            try {
+                process.destroy();
+                IOUtils.close(bufferedReader);
 
-            evictingQueue.clear();
-            exceptionStack.clear();
-            createLineReader(commands);
+                evictingQueue.clear();
+                exceptionStack.clear();
+                createLineReader(commands);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
 
         @SneakyThrows
@@ -162,6 +166,7 @@ public class BlackcatLogExceptionCollector {
                     }
                 }
             } catch (Exception ex) {
+                ex.printStackTrace();
                 reset();
             }
 
@@ -169,11 +174,15 @@ public class BlackcatLogExceptionCollector {
         }
 
         private void detectException(String lastNormalLine) {
-            if (exceptionStack.isEmpty()) return;
+            try {
+                if (exceptionStack.isEmpty()) return;
 
-            evictingQueue.add(Consts.JOINER.join(exceptionStack));
-            findException(lastNormalLine);
-            exceptionStack.clear();
+                evictingQueue.add(Consts.JOINER.join(exceptionStack));
+                findException(lastNormalLine);
+                exceptionStack.clear();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
 
         private void findException(String lastNormalLine) {
@@ -183,7 +192,7 @@ public class BlackcatLogExceptionCollector {
 
             val req = createBlackcatLogException(lastNormalLine, exceptionNames);
             if (req.isPresent()) {
-                log.warn("found exceptiong in log:{}", req.get());
+                log.warn("found exception in log:{}", req.get());
                 sender.send(req.get());
             }
         }

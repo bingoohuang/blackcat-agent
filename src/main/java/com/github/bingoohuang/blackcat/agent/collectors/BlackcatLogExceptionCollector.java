@@ -175,7 +175,7 @@ public class BlackcatLogExceptionCollector {
 
         private void detectException(String lastNormalLine) {
             try {
-                if (exceptionStack.isEmpty()) return;
+                if (lastNormalLine == null || exceptionStack.isEmpty()) return;
 
                 evictingQueue.add(Consts.JOINER.join(exceptionStack));
                 findException(lastNormalLine);

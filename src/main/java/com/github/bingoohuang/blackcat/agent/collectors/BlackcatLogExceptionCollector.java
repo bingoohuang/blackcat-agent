@@ -93,7 +93,7 @@ public class BlackcatLogExceptionCollector {
 
     interface Consts {
         Pattern NORMAL_LINE_PATTERN = Pattern.compile("^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) .*", Pattern.DOTALL); // 2017-11-20 03:58:48.167
-        Pattern EXCEPTION_PATTERN = Pattern.compile("\\b\\S+Exception\\b"); // java.io.InvalidClassException
+        Pattern EXCEPTION_PATTERN = Pattern.compile("\\.(\\S+)?Exception\\b"); // java.io.InvalidClassException
         // tenantCode[1704421450] tenantId[94c63603-e487-4cb3-bc98-6129ec616722]
         Pattern TCODE_PATTERN = Pattern.compile("tenantCode\\[(\\d+)\\]");
         Pattern TID_PATTERN = Pattern.compile("tenantId\\[(.*?)\\]");

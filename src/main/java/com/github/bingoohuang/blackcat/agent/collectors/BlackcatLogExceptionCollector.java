@@ -247,6 +247,9 @@ public class BlackcatLogExceptionCollector {
                 }
             }
 
+            // 忽略业务异常（约定）
+            if (exceptionNames.contains("BizException")) return Optional.empty();
+
             val build = BlackcatMsg.BlackcatLogException.newBuilder()
                     .setLogger(logger)
                     .setTcode(tcode)

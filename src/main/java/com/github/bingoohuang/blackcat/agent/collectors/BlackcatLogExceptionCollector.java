@@ -113,7 +113,7 @@ public class BlackcatLogExceptionCollector {
         private BufferedReader bufferedReader;
         private LineReader lineReader;
 
-        private EvictingQueue<Object> evictingQueue = EvictingQueue.create(10);
+        private EvictingQueue<Object> evictingQueue = EvictingQueue.create(100);
         private List<String> exceptionStack = new ArrayList<>();
 
         public ProcessBean(BlackcatReqSender sender, String[] commands,
